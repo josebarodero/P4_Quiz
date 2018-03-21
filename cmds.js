@@ -250,7 +250,7 @@ exports.playCmd = (socket, rl) => {
         let quiz = toBePlayed[pos];
         toBePlayed.splice(pos, 1);
 
-        return makeQuestion(rl, quiz.question)
+        return makeQuestion(socket, rl, quiz.question)
             .then(answer => {
             if(answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim()) {
             score++;
