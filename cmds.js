@@ -218,7 +218,7 @@ exports.testCmd = (socket, rl,id) =>  {
         if(answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim()) {
             console.log(socket, "Respuesta correcta");
     } else {
-        console.log(socket, "Respuesta incorrecta");
+        console.log(socket, socket, "Respuesta incorrecta");
     }
 })
 
