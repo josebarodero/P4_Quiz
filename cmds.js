@@ -238,7 +238,7 @@ exports.playCmd = (socket, rl) => {
     let score = 0;
     let toBePlayed = [];
 
-    const playOne = () => {
+    const playOne = (socket) => {
 
         return Promise.resolve()
             .then (() => {
@@ -250,11 +250,11 @@ exports.playCmd = (socket, rl) => {
         let quiz = toBePlayed[pos];
         toBePlayed.splice(pos, 1);
 
-        return makeQuestion(socket, rl, quiz.question)
+        return makeQuestion(rl, quiz.question)
             .then(answer => {
             if(answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim()) {
             score++;
-            return playOne();
+            return playOne(socket);
         } else {
             console.log(socket, "Respuesta incorrecta");
         }
