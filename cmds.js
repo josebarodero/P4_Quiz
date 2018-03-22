@@ -101,7 +101,7 @@ exports.showCmd = (socket,rl, id) => {
 
 
 
-const makeQuestion = (socket, rl,text) => {
+const makeQuestion = ( rl,text) => {
     return new Sequelize.Promise((resolve,reject) => {
         rl.question(colorize(text, 'red'), answer => {
         resolve(answer.trim());
@@ -203,29 +203,28 @@ rl.prompt();
 
 
 
-exports.testCmd = (socket, rl,id) =>  {
-// validar id acceder a la base de datos como en editar
-
-    validateId(id)
+exports.testCmd = (socket,rl,id) => {
+    validateId(id) //primero tenemos que validar el usuario
         .then(id => models.quiz.findById(id))
 .then(quiz => {
-        if(!quiz) {
-        throw new Error(`No existe un quiz asiciado al id=${id}.` );
+        if(!quiz){
+        throw new Error(`No hay un quiz asociado a ese id=${id}.`);
     }
-
-    return makeQuestion(rl, quiz.question)
-        .then(answer => {
-        if(answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim()) {
-            console.log(socket, "Respuesta correcta");
+    return makeQuestion(rl, `${quiz.question}?: `) //Hacemos la pregunta que queremos testear
+        .then(respuesta => { //guardo la respuesta que he escrito en la pantalla, de la pregunta que hemos elegido nosotros
+        if((respuesta.toLowerCase()) === ((quiz.answer).toLowerCase().trim())) {
+        log(socket,'Respuesta correcta', 'green');
     } else {
-        console.log(socket, socket, "Respuesta incorrecta");
+        log(socket,'Respuesta Incorrecta', 'red')
     }
 })
-
 })
-
+.catch(Sequelize.ValidationError, error => { //Si hay errores de validación
+        errorlog(socket,'El quiz es erroneo: ');
+    error.errors.forEach(({message}) => errorlog(message));
+})
 .catch(error => {
-        errorlog(socket, error.mesage);
+        errorlog(socket,error.message);
 })
 .then(() => {
         rl.prompt();
@@ -234,35 +233,37 @@ exports.testCmd = (socket, rl,id) =>  {
 };
 
 
-exports.playCmd = (socket, rl) => {
+exports.playCmd = (socket,rl) => {
     let score = 0;
     let toBePlayed = [];
 
-    const playOne = (socket) => {
+    const playOne = () => {
 
         return Promise.resolve()
             .then (() => {
             if (toBePlayed.length <= 0) {
-            console.log(socket, "Fin del Juego");
+            console.log(socket,"No quedan más preguntas se ha acabado el juegos");
             return;
         }
         let pos = Math.floor(Math.random() * toBePlayed.length);
         let quiz = toBePlayed[pos];
         toBePlayed.splice(pos, 1);
 
-        return makeQuestion(rl, quiz.question)
-            .then(answer => {
-            if(answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim()) {
+        return makeQuestion(rl, `${quiz.question}:`) //
+            .then(respuesta => {
+            if(respuesta.toLowerCase().trim() === quiz.answer.toLowerCase().trim()) {
             score++;
-            return playOne(socket);
+            log(socket,'Resuesta correcta', 'green');
+            return playOne();
         } else {
-            console.log(socket, "Respuesta incorrecta");
+            log(socket,'Respuesta incorrecta', 'red');
+            log(socket,"Fin del juego");
         }
     })
     })
     }
 
-    models.quiz.findAll({raw: true})
+    models.quiz.findAll({raw: true}) //para comprobar que no te repita una pregunta que ya habías acertado antes
         .then(quizzes => {
         toBePlayed = quizzes;
 })
@@ -270,14 +271,13 @@ exports.playCmd = (socket, rl) => {
         return playOne();
 })
 .catch(e => {
-        console.log(socket, "error: " + e);
+        console.log(socket,"error: " + e);
 })
 .then(() => {
-        console.log(socket, score);
+        console.log(socket,`Tu puntuación actual es:${score}`);
     rl.prompt();
 })
 };
-
 
 
 
@@ -289,6 +289,7 @@ exports.playCmd = (socket, rl) => {
 
 exports.quitCmd = (socket, rl) => {
     rl.close();
+    rl.prompt();
     socket.end();
 };
 
